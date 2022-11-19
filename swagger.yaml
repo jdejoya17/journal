@@ -1,0 +1,323 @@
+openapi: 3.0.3
+info:
+  title: Journal Backend API
+  description: Backend for a journaling application
+  version: 1.0.0
+servers:
+  - url: https://localhost/api
+tags:
+  - name: Authentication
+    description: "Registration, login, and logout of an account user."
+  - name: Users
+    description: Operations about users.
+  - name: Roles
+    description: Operations about roles.
+  - name: Permissions
+    description: Operations about permissions
+  - name: Journals
+    description: Operations about journals
+  - name: JournalEntries
+    description: Operations about journals entries
+paths:
+  /v1/register:
+    post:
+      tags:
+        - Authentication
+      description: Registers a new users.
+      operationId: register_user
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterNewUser'
+      responses:
+        "201":
+          description: successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPResponse'
+        "400":
+          description: client request is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPResponse'
+      x-openapi-router-controller: swagger_server.controllers.authentication_controller
+  /v1/login:
+    post:
+      tags:
+        - Authentication
+      description: Login a user to Journal
+      operationId: login_user
+      requestBody:
+        $ref: '#/components/requestBodies/LoginUser'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPResponse'
+        "400":
+          description: client request is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPResponse'
+      x-openapi-router-controller: swagger_server.controllers.authentication_controller
+  /v1/logout:
+    post:
+      tags:
+        - Authentication
+      description: Logout a user from Journal
+      operationId: logout_user
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPResponse'
+        "401":
+          description: client is unauthorized to access this endpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPResponse'
+      x-openapi-router-controller: swagger_server.controllers.authentication_controller
+  /v1/users:
+    get:
+      tags:
+        - Users
+      description: Get all users
+      operationId: get_all_users
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+    post: 
+      tags:
+        - Users
+      description: Create a new user
+      operationId: create_new_user
+      requestBody:
+        $ref: '#/components/requestBodies/CreateNewUser'
+      responses:
+        "201":
+          $ref: '#/components/responses/Created'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+  /v1/user/{userId}:
+    get:
+      tags:
+        - Users
+      description: Get a specific user
+      operationId: get_user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Users
+      description: Update a specific user
+      operationId: update_user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        "200":
+          $ref: '#/components/responses/OK'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Users
+      description: Delete a specific user
+      operationId: delete_user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        "204":
+          $ref: '#/components/responses/Deleted'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+components:
+  parameters:
+    UserId:
+      in: path
+      name: userId
+      description: user ID
+      schema:
+        type: string
+      required: true
+  schemas:
+    Email:
+      type: object
+      properties:
+        email:
+          type: string
+          description: email of the user
+    UserName:
+      type: object
+      properties:
+        username:
+          type: string
+          description: user unique public identifcation name handle
+    Password:
+      type: object
+      properties:
+        password:
+          type: string
+          description: specified account password
+    User:
+      required:
+        - email 
+        - password
+      allOf:
+        - $ref: '#/components/schemas/Email'
+        - $ref: '#/components/schemas/UserName'
+        - $ref: '#/components/schemas/Password'
+        - type: object
+          properties:
+            first_name:
+              type: string
+              description: first name of the user
+            last_name:
+              type: string
+              description: last name of the user
+    LoginUserByEmail:
+      required:
+        - email
+        - password
+      allOf:
+        - $ref: '#/components/schemas/Email'
+        - $ref: '#/components/schemas/Password'
+    LoginUserByUserName:
+      required:
+        - password
+        - username
+      allOf:
+        - $ref: '#/components/schemas/UserName'
+        - $ref: '#/components/schemas/Password'
+    RegisterNewUser:
+      required:
+        - email
+        - password
+        - password_verification
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            password_verification:
+              type: string
+              description: verify specified account password
+    HTTPResponse:
+      required:
+      - code
+      - message
+      type: object
+      properties:
+        code:
+          type: string
+          description: HTTP status code
+        message:
+          type: string
+          description: HTTP error message
+      example:
+        code: code
+        message: message
+  # TODO: Add examples to all responses
+  responses:
+    # 2XX
+    OK:
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+    Created:
+      description: successfully created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+    Deleted:
+      description: successfully deleted
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+    # 4XX
+    BadRequest:
+      description: client request is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+    NotFound:
+      description: the specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+    Unauthorized:
+      description: client is unauthorized to access this endpoint
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+    # 5XX
+    InternalServerError:
+      description: internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPResponse'
+          example:
+            code: '500'
+            message: 'internal server error'
+  # TODO: Create examples
+  requestBodies:
+    LoginUser:
+      description: Login to Journal by email or username.
+      content:
+        application/json:
+          schema:
+            oneOf:
+            - $ref: '#/components/schemas/LoginUserByEmail'
+            - $ref: '#/components/schemas/LoginUserByUserName'
+    RegisterNewUser:
+      description: New user object that needs to be registered.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterNewUser'
+    CreateNewUser:
+      description: New user object that needs to be created.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
